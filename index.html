@@ -7,7 +7,7 @@ status: draft
 confidentiality: public
 created: 2026-11-13
 updated: 2026-11-13
-tags: [clash-royale, duel, crown-series, deck-stats]
+tags: [clash-royale, duel, crown-series, deck-stats, deck-builder]
 ---
 -->
 <!doctype html>
@@ -21,29 +21,34 @@ tags: [clash-royale, duel, crown-series, deck-stats]
 <style>
 :root{
   --bg:#f4f5f7; --surface:#ffffff; --surface2:#eef0f3; --text:#16181d; --muted:#626a76;
-  --line:#dde1e6; --accent:#3a5bd9; --accent-text:#ffffff; --win:#1f8a4c; --lose:#c23b3b; --evo:#8a4fd8;
+  --line:#dde1e6; --accent:#3a5bd9; --accent-text:#ffffff; --win:#1f8a4c; --lose:#c23b3b;
+  --evo:#8a4fd8; --hero:#c9901a; --warn-bg:#fff1e8; --warn:#b4471a;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#111317; --surface:#1a1d23; --surface2:#23272f; --text:#eceef2; --muted:#9aa2ae;
-    --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a; --evo:#b98bff;
+    --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a;
+    --evo:#b98bff; --hero:#f0bf4c; --warn-bg:#3a2316; --warn:#ffab7a;
   }
 }
 :root[data-theme="dark"]{
   --bg:#111317; --surface:#1a1d23; --surface2:#23272f; --text:#eceef2; --muted:#9aa2ae;
-  --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a; --evo:#b98bff;
+  --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a;
+  --evo:#b98bff; --hero:#f0bf4c; --warn-bg:#3a2316; --warn:#ffab7a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
 header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 16px 8px;border-bottom:1px solid var(--line)}
 h1{font-size:17px;margin:0}
 .sub{color:var(--muted);font-size:12px}
 main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
 .tabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
-.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 14px;font-size:14px}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
 .controls{display:flex;gap:8px;margin:12px 0}
-.controls input,.controls select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 10px;font-size:15px}
+input[type=search],select,.textin{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 10px;font-size:16px}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
@@ -54,29 +59,58 @@ main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
 .card{position:relative;aspect-ratio:5/6;background:var(--surface2);border-radius:6px;overflow:hidden}
 .card img{width:100%;height:100%;object-fit:contain;display:block}
 .card.evo{outline:2px solid var(--evo);outline-offset:-2px}
-.card .nm{position:absolute;inset:auto 0 0 0;font-size:9px;text-align:center;background:rgba(0,0,0,.5);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.hero{outline:2px solid var(--hero);outline-offset:-2px}
+.card.dup{outline:3px solid var(--lose);outline-offset:-3px}
+.card .nm{position:absolute;inset:auto 0 0 0;font-size:9px;text-align:center;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .badge{position:absolute;top:2px;left:2px;font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;background:var(--lose);color:#fff}
+.card .ex{position:absolute;top:2px;right:2px;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;background:#c548e0;color:#fff}
 .meta{display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap}
 .wr{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .wr.good{color:var(--win)} .wr.bad{color:var(--lose)}
 .muted{color:var(--muted);font-size:12px}
 .picks{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .pick{background:var(--surface2);border-radius:8px;padding:3px 8px;font-size:12px;font-variant-numeric:tabular-nums}
-.pick b{font-weight:700}
-.actions{display:flex;gap:8px;margin-top:10px}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .btn{flex:1;text-align:center;text-decoration:none;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:10px;padding:9px 6px;font-size:14px;font-weight:600}
 .btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
 .btn.small{flex:0 0 auto;padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.45}
 .empty{color:var(--muted);text-align:center;padding:32px 8px}
 .set{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:12px}
 .set.active{border-color:var(--accent)}
 .set-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.set-head input{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:8px;padding:6px 8px;font-size:15px;font-weight:600}
+.set-head .textin{padding:6px 8px;font-weight:600;background:var(--surface2)}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13px;margin:6px 0}
+.ok{color:var(--win);font-size:13px;margin:6px 0}
 .slot{border-top:1px dashed var(--line);padding-top:8px;margin-top:8px}
-.slot-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.slot-head .n{font-weight:700;font-size:13px;color:var(--muted)}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.slot-head{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.slot-head .n{font-weight:700;font-size:13px;color:var(--muted);margin-right:auto}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1}
 .note{color:var(--muted);font-size:12px;margin:4px 0 12px}
+/* sheet (full-screen editor) */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column}
+.sheet[hidden]{display:none}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.sheet-head h2{font-size:16px;margin:0;flex:1}
+.sheet-body{flex:1;overflow-y:auto;padding:10px 16px 40px;max-width:720px;width:100%;margin:0 auto}
+.tray{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+@media (max-width:420px){.tray{grid-template-columns:repeat(4,1fr)}}
+.tray-slot{display:flex;flex-direction:column;gap:3px}
+.tray-slot .card{border:none;padding:0;width:100%}
+.tray-slot .empty-slot{aspect-ratio:5/6;border:2px dashed var(--line);border-radius:6px}
+.mode{font-size:11px;padding:2px 0;border-radius:6px;border:1px solid var(--line);background:var(--surface)}
+.mode.evo{border-color:var(--evo);color:var(--evo)} .mode.hero{border-color:var(--hero);color:var(--hero)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:8px 0}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px}
+.grid button.card{border:none;padding:0}
+.grid button.card.sel{outline:3px solid var(--accent);outline-offset:-3px}
+.grid button.card.sel::after{content:"✓";position:absolute;top:2px;left:2px;background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:700;border-radius:4px;padding:0 4px}
+.grid button.card.used{opacity:.55}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.row label{font-size:13px;color:var(--muted);flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -90,25 +124,31 @@ main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
   </div>
 </header>
 <main id="main"></main>
+<section class="sheet" id="sheet" hidden aria-modal="true" role="dialog"></section>
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
   const state = { view: "duel", q: "", sort: "wr", battles: [], cards: {}, player: {} };
   const $main = document.getElementById("main");
+  const $sheet = document.getElementById("sheet");
 
   // ---------- storage (per-device) ----------
   const STORE_KEY = "cr-duel-stocks-v1";
   function loadStocks(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { active: null, sets: [] }; } catch { return { active: null, sets: [] }; } }
-  function saveStocks(s){ try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} }
+  function saveStocks(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(stocks)); } catch {} }
   let stocks = loadStocks();
+  // 旧形式（decks を詰めて保存）→ 4枠固定（null は空き）
+  stocks.sets.forEach(s => { s.decks = [0, 1, 2, 3].map(i => s.decks[i] || null); });
 
   // ---------- helpers ----------
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const keyOf = deck => deck.map(c => c.id).slice().sort().join("-");
   const pct = (w, g) => g ? Math.round(w / g * 100) : null;
-  function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1600); }
-  function fmtTime(s){ // 20261113T034216.000Z
+  const cinfo = id => state.cards[id] || {};
+  const cname = id => cinfo(id).name || String(id);
+  function toast(msg, ms){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), ms || 1800); }
+  function fmtTime(s){
     if (!s) return "-";
     const d = new Date(s.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*$/, "$1-$2-$3T$4:$5:$6Z"));
     return d.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -119,6 +159,17 @@ main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
     return u;
   }
   const isDuel = b => b.deckSelection === "quadDeckPick" || (b.rounds && b.rounds.length);
+  function iconOf(c){
+    const i = cinfo(c.id);
+    if (c.evo === 2 && i.heroIcon) return i.heroIcon;
+    if (c.evo === 1 && i.evoIcon) return i.evoIcon;
+    return i.icon || "";
+  }
+  const modeCls = evo => evo === 2 ? " hero" : evo === 1 ? " evo" : "";
+  function avgElixir(deck){
+    const xs = deck.map(c => cinfo(c.id).elixir).filter(x => typeof x === "number");
+    return xs.length ? (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : "-";
+  }
 
   // ---------- aggregation ----------
   function aggregate(view){
@@ -132,61 +183,54 @@ main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
       if (pick) { const p = e.picks[pick] ||= { g: 0, w: 0 }; p.g++; if (res === "W") p.w++; }
     };
     for (const b of state.battles) {
-      if (view === "duel") {
-        if (!isDuel(b)) continue;
-        for (const r of (b.rounds || [])) add(r.deck, b.tt, r.result, b.time, r.pick);
-      } else if (view === "ranked") {
-        if (isDuel(b)) continue;
-        add(b.deck, b.tt, b.result, b.time, null);
-      }
+      const duel = isDuel(b);
+      if ((view === "duel" || view === "all") && duel) for (const r of (b.rounds || [])) add(r.deck, b.tt, r.result, b.time, r.pick);
+      if ((view === "ranked" || view === "all") && !duel) add(b.deck, b.tt, b.result, b.time, null);
     }
     return [...map.values()];
   }
 
-  // ---------- rendering ----------
-  function cardsHtml(deck){
+  // ---------- duplicate check ----------
+  // set 内でカードIDごとに使っているデッキ番号(0-3)を集計
+  function usage(set, exceptSlot){
+    const m = new Map();
+    set.decks.forEach((d, i) => { if (!d || i === exceptSlot) return; d.deck.forEach(c => { if (!m.has(c.id)) m.set(c.id, []); m.get(c.id).push(i); }); });
+    return m;
+  }
+  function dupList(set){ return [...usage(set).entries()].filter(([, v]) => v.length > 1); }
+  function overlapWith(set, deck, slot){ const u = usage(set, slot); return deck.filter(c => u.has(c.id)).map(c => ({ id: c.id, slots: u.get(c.id) })); }
+  const slotNames = arr => arr.map(i => "デッキ" + (i + 1)).join("・");
+
+  // ---------- rendering: card row ----------
+  function cardsHtml(deck, dupIds){
     return '<div class="cards">' + deck.map(c => {
-      const info = state.cards[c.id] || {};
-      const evo = c.evo > 0;
-      const src = (evo && info.evoIcon) || info.icon || "";
-      return `<div class="card${evo ? " evo" : ""}" title="${esc(info.name)}">${src ? `<img loading="lazy" alt="${esc(info.name)}" src="${esc(src)}">` : ""}<div class="nm">${esc(info.name || c.id)}</div></div>`;
+      const nm = cname(c.id), src = iconOf(c), dup = dupIds && dupIds.has(c.id);
+      return `<div class="card${modeCls(c.evo)}${dup ? " dup" : ""}" title="${esc(nm)}">${src ? `<img loading="lazy" alt="${esc(nm)}" src="${esc(src)}">` : ""}${dup ? '<span class="badge">被り</span>' : ""}<div class="nm">${esc(nm)}</div></div>`;
     }).join("") + "</div>";
   }
-  function avgElixir(deck){
-    const xs = deck.map(c => (state.cards[c.id] || {}).elixir).filter(x => typeof x === "number");
-    return xs.length ? (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : "-";
-  }
-  function matches(deck){
-    if (!state.q) return true;
-    const q = state.q.toLowerCase();
-    return deck.some(c => ((state.cards[c.id] || {}).name || "").toLowerCase().includes(q));
-  }
+  const matches = (deck, q) => !q || deck.some(c => cname(c.id).toLowerCase().includes(q.toLowerCase()));
 
+  // ---------- views: duel / ranked ----------
   function renderList(view){
-    const list = aggregate(view).filter(e => matches(e.deck));
+    const list = aggregate(view).filter(e => matches(e.deck, state.q));
     list.sort((a, b) => state.sort === "games" ? b.g - a.g || b.w / b.g - a.w / a.g
                      : state.sort === "recent" ? (b.last > a.last ? 1 : -1)
                      : (b.w / b.g - a.w / a.g) || b.g - a.g);
-
-    let summary = "";
+    let summary;
     if (view === "duel") {
-      const ms = state.battles.filter(isDuel);
-      const mw = ms.filter(b => b.result === "W").length;
-      const rs = ms.flatMap(b => b.rounds || []);
-      const rw = rs.filter(r => r.result === "W").length;
+      const ms = state.battles.filter(isDuel), mw = ms.filter(b => b.result === "W").length;
+      const rs = ms.flatMap(b => b.rounds || []), rw = rs.filter(r => r.result === "W").length;
       summary = `<div class="summary">
         <div class="stat"><b>${ms.length ? pct(mw, ms.length) + "%" : "-"}</b><span>試合勝率 ${mw}-${ms.length - mw}</span></div>
         <div class="stat"><b>${rs.length ? pct(rw, rs.length) + "%" : "-"}</b><span>ラウンド勝率 ${rw}-${rs.length - rw}</span></div>
         <div class="stat"><b>${list.length}</b><span>使ったデッキ数</span></div></div>`;
     } else {
-      const bs = state.battles.filter(b => !isDuel(b));
-      const w = bs.filter(b => b.result === "W").length;
+      const bs = state.battles.filter(b => !isDuel(b)), w = bs.filter(b => b.result === "W").length;
       summary = `<div class="summary">
         <div class="stat"><b>${bs.length ? pct(w, bs.length) + "%" : "-"}</b><span>勝率 ${w}-${bs.length - w}</span></div>
         <div class="stat"><b>${bs.length}</b><span>試合数</span></div>
         <div class="stat"><b>${list.length}</b><span>デッキ数</span></div></div>`;
     }
-
     const controls = `<div class="controls">
       <input type="search" id="q" placeholder="カード名で検索（例: Monk）" value="${esc(state.q)}">
       <select id="sort">
@@ -194,84 +238,197 @@ main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
         <option value="games"${state.sort === "games" ? " selected" : ""}>使用数順</option>
         <option value="recent"${state.sort === "recent" ? " selected" : ""}>最近使った順</option>
       </select></div>`;
-
     const note = view === "duel" ? `<p class="note">Duelは1ラウンド＝1試合として集計。「pick」は何戦目にそのデッキを出したか。</p>` : "";
-
     const items = list.map(e => {
-      const r = pct(e.w, e.g);
-      const cls = r >= 55 ? "good" : r <= 45 ? "bad" : "";
-      const picks = view === "duel" ? `<div class="picks">${[1, 2, 3].map(p => {
-        const s = e.picks[p]; return `<span class="pick">pick${p}: ${s ? `<b>${pct(s.w, s.g)}%</b> (${s.w}-${s.g - s.w})` : "-"}</span>`;
-      }).join("")}</div>` : "";
-      return `<div class="deck">
-        ${cardsHtml(e.deck)}
+      const r = pct(e.w, e.g), cls = r >= 55 ? "good" : r <= 45 ? "bad" : "";
+      const picks = view === "duel" ? `<div class="picks">${[1, 2, 3].map(p => { const s = e.picks[p]; return `<span class="pick">pick${p}: ${s ? `<b>${pct(s.w, s.g)}%</b> (${s.w}-${s.g - s.w})` : "-"}</span>`; }).join("")}</div>` : "";
+      return `<div class="deck">${cardsHtml(e.deck)}
         <div class="meta"><span class="wr ${cls}">${r}%</span><span>${e.w}勝${e.g - e.w}敗</span><span class="muted">平均${avgElixir(e.deck)} ・ 最終 ${fmtTime(e.last)}</span></div>
         ${picks}
-        <div class="actions">
-          <a class="btn primary" href="${esc(deckLink(e.deck, e.tt))}">アプリでコピー</a>
-          <button class="btn" data-stock="${esc(e.key)}" data-view="${view}">ストックへ追加</button>
-        </div></div>`;
+        <div class="actions"><a class="btn primary" href="${esc(deckLink(e.deck, e.tt))}">アプリでコピー</a>
+          <button class="btn" data-stock="${esc(e.key)}" data-view="${view}">ストックへ追加</button></div></div>`;
     }).join("");
-
     $main.innerHTML = summary + controls + note + (items || `<div class="empty">${view === "duel" ? "まだDuelの記録がありません。Duelを遊ぶと30分以内に反映されます。" : "該当するデッキがありません。"}</div>`);
     const q = document.getElementById("q");
     q.addEventListener("input", () => { state.q = q.value.trim(); const pos = q.selectionStart; renderList(view); const nq = document.getElementById("q"); nq.focus(); nq.setSelectionRange(pos, pos); });
     document.getElementById("sort").addEventListener("change", ev => { state.sort = ev.target.value; renderList(view); });
     $main.querySelectorAll("[data-stock]").forEach(btn => btn.addEventListener("click", () => {
       const e = aggregate(btn.dataset.view).find(x => x.key === btn.dataset.stock);
-      if (e) addToStock(e);
+      if (e) addToActiveSet({ deck: e.deck, tt: e.tt });
     }));
   }
 
-  // ---------- stock (4-deck sets) ----------
+  // ---------- stock: sets ----------
   function newSet(){
-    const s = { id: Date.now().toString(36), name: "Duelデッキ " + (stocks.sets.length + 1), decks: [] };
-    stocks.sets.unshift(s); stocks.active = s.id; saveStocks(stocks); return s;
+    const s = { id: Date.now().toString(36), name: "Duelデッキ " + (stocks.sets.length + 1), decks: [null, null, null, null] };
+    stocks.sets.unshift(s); stocks.active = s.id; saveStocks(); return s;
   }
-  function activeSet(){ return stocks.sets.find(s => s.id === stocks.active) || null; }
-  function addToStock(e){
+  const activeSet = () => stocks.sets.find(s => s.id === stocks.active) || null;
+  const findSet = id => stocks.sets.find(s => s.id === id);
+  function warnOverlap(set, deck, slot){
+    const ov = overlapWith(set, deck, slot);
+    if (ov.length) toast(`⚠ カード被り ${ov.length}枚：${ov.map(o => `${cname(o.id)}（${slotNames(o.slots)}）`).join("、")}`, 4000);
+    return ov.length;
+  }
+  function putDeck(set, slot, entry){
+    set.decks[slot] = { deck: entry.deck.map(c => ({ id: c.id, evo: c.evo || 0 })), tt: entry.tt || null };
+    saveStocks();
+    if (!warnOverlap(set, entry.deck, slot)) toast(`「${set.name}」のデッキ${slot + 1}に入れました`);
+  }
+  function addToActiveSet(entry){
     let s = activeSet();
-    if (!s || s.decks.length >= 4) s = newSet();
-    if (s.decks.some(d => keyOf(d.deck) === e.key)) { toast("このセットに追加済みです"); return; }
-    s.decks.push({ deck: e.deck, tt: e.tt });
-    saveStocks(stocks);
-    toast(`「${s.name}」に追加（${s.decks.length}/4）`);
-  }
-  function renderStock(){
-    const sets = stocks.sets;
-    let html = `<div class="actions" style="margin:4px 0 12px"><button class="btn primary" id="new-set">＋ 新しい4デッキセット</button></div>
-      <p class="note">ストックはこの端末のブラウザに保存されます。デッキ一覧の「ストックへ追加」で、選択中のセットに入ります（4つで満杯になると次のセットを自動作成）。</p>`;
-    if (!sets.length) html += `<div class="empty">まだセットがありません。</div>`;
-    html += sets.map(s => `<div class="set${s.id === stocks.active ? " active" : ""}" data-set="${s.id}">
-      <div class="set-head">
-        <input value="${esc(s.name)}" data-rename="${s.id}" aria-label="セット名">
-        <button class="btn small" data-activate="${s.id}">${s.id === stocks.active ? "選択中" : "選択"}</button>
-        <button class="btn small" data-del-set="${s.id}">削除</button>
-      </div>
-      ${[0, 1, 2, 3].map(i => {
-        const d = s.decks[i];
-        return `<div class="slot"><div class="slot-head"><span class="n">デッキ${i + 1}</span>${d ? `<a class="btn small primary" href="${esc(deckLink(d.deck, d.tt))}">コピー</a><button class="btn small" data-rm="${s.id}:${i}">外す</button>` : ""}</div>
-          ${d ? cardsHtml(d.deck) : `<div class="muted">空き</div>`}</div>`;
-      }).join("")}
-    </div>`).join("");
-    $main.innerHTML = html;
-    document.getElementById("new-set").onclick = () => { newSet(); renderStock(); };
-    $main.querySelectorAll("[data-rename]").forEach(inp => inp.addEventListener("change", () => { const s = sets.find(x => x.id === inp.dataset.rename); s.name = inp.value.trim() || s.name; saveStocks(stocks); }));
-    $main.querySelectorAll("[data-activate]").forEach(b => b.onclick = () => { stocks.active = b.dataset.activate; saveStocks(stocks); renderStock(); });
-    $main.querySelectorAll("[data-del-set]").forEach(b => b.onclick = () => {
-      if (b.dataset.armed) { stocks.sets = sets.filter(x => x.id !== b.dataset.delSet); if (stocks.active === b.dataset.delSet) stocks.active = stocks.sets[0]?.id || null; saveStocks(stocks); renderStock(); }
-      else { b.dataset.armed = "1"; b.textContent = "本当に削除"; }
-    });
-    $main.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { const [id, i] = b.dataset.rm.split(":"); const s = sets.find(x => x.id === id); s.decks.splice(+i, 1); saveStocks(stocks); renderStock(); });
+    let slot = s ? s.decks.findIndex(d => !d) : -1;
+    if (!s || slot < 0) { s = newSet(); slot = 0; }
+    if (s.decks.some(d => d && keyOf(d.deck) === keyOf(entry.deck))) { toast("このセットに追加済みです"); return; }
+    putDeck(s, slot, entry);
   }
 
+  function renderStock(){
+    const sets = stocks.sets;
+    let html = `<div class="actions" style="margin:4px 0 8px"><button class="btn primary" id="new-set">＋ 新しい4デッキセット</button></div>
+      <p class="note">各枠の「履歴から」で対戦履歴のデッキを、「カードで作る」で1枚ずつ選んで入れられます。同じセット内でカードが被ると赤枠で警告します。ストックはこの端末のブラウザに保存されます。</p>`;
+    if (!sets.length) html += `<div class="empty">まだセットがありません。</div>`;
+    html += sets.map(s => {
+      const dups = dupList(s), dupIds = new Set(dups.map(([id]) => id));
+      const filled = s.decks.filter(Boolean).length;
+      const status = dups.length
+        ? `<div class="warn">⚠ カード被り ${dups.length}種類：${dups.map(([id, sl]) => `${esc(cname(id))}（${slotNames(sl)}）`).join("、")}</div>`
+        : filled === 4 ? `<div class="ok">✓ 4デッキ・32枚すべて別カードです</div>` : "";
+      return `<div class="set${s.id === stocks.active ? " active" : ""}">
+        <div class="set-head">
+          <input class="textin" value="${esc(s.name)}" data-rename="${s.id}" aria-label="セット名">
+          <button class="btn small" data-activate="${s.id}">${s.id === stocks.active ? "選択中" : "選択"}</button>
+          <button class="btn small" data-del-set="${s.id}">削除</button>
+        </div>
+        ${status}
+        ${s.decks.map((d, i) => `<div class="slot">
+          <div class="slot-head"><span class="n">デッキ${i + 1}${d ? ` ・ 平均${avgElixir(d.deck)}` : ""}</span>
+            ${d ? `<a class="btn small primary" href="${esc(deckLink(d.deck, d.tt))}">コピー</a>` : ""}
+            <button class="btn small" data-hist="${s.id}:${i}">履歴から</button>
+            <button class="btn small" data-build="${s.id}:${i}">${d ? "編集" : "カードで作る"}</button>
+            ${d ? `<button class="btn small" data-rm="${s.id}:${i}">外す</button>` : ""}
+          </div>
+          ${d ? cardsHtml(d.deck, dupIds) : `<div class="muted">空き</div>`}</div>`).join("")}
+      </div>`;
+    }).join("");
+    $main.innerHTML = html;
+    document.getElementById("new-set").onclick = () => { newSet(); renderStock(); };
+    $main.querySelectorAll("[data-rename]").forEach(inp => inp.addEventListener("change", () => { const s = findSet(inp.dataset.rename); s.name = inp.value.trim() || s.name; saveStocks(); }));
+    $main.querySelectorAll("[data-activate]").forEach(b => b.onclick = () => { stocks.active = b.dataset.activate; saveStocks(); renderStock(); });
+    $main.querySelectorAll("[data-del-set]").forEach(b => b.onclick = () => {
+      if (b.dataset.armed) { stocks.sets = sets.filter(x => x.id !== b.dataset.delSet); if (stocks.active === b.dataset.delSet) stocks.active = stocks.sets[0]?.id || null; saveStocks(); renderStock(); }
+      else { b.dataset.armed = "1"; b.textContent = "本当に削除"; }
+    });
+    const split = v => { const [id, i] = v.split(":"); return [findSet(id), +i]; };
+    $main.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { const [s, i] = split(b.dataset.rm); s.decks[i] = null; saveStocks(); renderStock(); });
+    $main.querySelectorAll("[data-hist]").forEach(b => b.onclick = () => { const [s, i] = split(b.dataset.hist); openHistoryPicker(s, i); });
+    $main.querySelectorAll("[data-build]").forEach(b => b.onclick = () => { const [s, i] = split(b.dataset.build); openBuilder(s, i); });
+  }
+
+  // ---------- sheet helpers ----------
+  function openSheet(html){ $sheet.innerHTML = html; $sheet.hidden = false; document.body.classList.add("lock"); $sheet.scrollTop = 0; }
+  function closeSheet(){ $sheet.hidden = true; $sheet.innerHTML = ""; document.body.classList.remove("lock"); render(); }
+
+  // ---------- history picker ----------
+  function openHistoryPicker(set, slot){
+    let q = "";
+    openSheet(`<div class="sheet-head"><button class="btn small" id="sh-close">閉じる</button><h2>デッキ${slot + 1}に入れる（履歴から）</h2></div>
+      <div class="sheet-body"><div class="controls"><input type="search" id="hq" placeholder="カード名で検索"></div><div id="hlist"></div></div>`);
+    document.getElementById("sh-close").onclick = closeSheet;
+    const list = aggregate("all").sort((a, b) => (b.last > a.last ? 1 : -1));
+    const draw = () => {
+      const items = list.filter(e => matches(e.deck, q)).map(e => {
+        const ov = overlapWith(set, e.deck, slot), ovIds = new Set(ov.map(o => o.id));
+        return `<div class="deck">${cardsHtml(e.deck, ovIds)}
+          <div class="meta"><span>${pct(e.w, e.g)}%（${e.w}勝${e.g - e.w}敗）</span><span class="muted">平均${avgElixir(e.deck)} ・ 最終 ${fmtTime(e.last)}</span></div>
+          ${ov.length ? `<div class="warn">⚠ ほかのデッキと${ov.length}枚被り：${ov.map(o => `${esc(cname(o.id))}（${slotNames(o.slots)}）`).join("、")}</div>` : ""}
+          <div class="actions"><button class="btn primary" data-pick="${esc(e.key)}">この枠に入れる</button></div></div>`;
+      }).join("");
+      const box = document.getElementById("hlist");
+      box.innerHTML = items || `<div class="empty">該当するデッキがありません。</div>`;
+      box.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { const e = list.find(x => x.key === b.dataset.pick); putDeck(set, slot, e); closeSheet(); });
+    };
+    document.getElementById("hq").addEventListener("input", ev => { q = ev.target.value.trim(); draw(); });
+    draw();
+  }
+
+  // ---------- builder (pick cards one by one) ----------
+  function openBuilder(set, slot){
+    const cur = set.decks[slot];
+    const b = { cards: cur ? cur.deck.map(c => ({ id: c.id, evo: c.evo || 0 })) : [], tt: cur?.tt || 159000000, q: "", ex: "all" };
+    const all = Object.entries(state.cards).filter(([, v]) => !v.support && v.name).map(([id, v]) => ({ id: +id, ...v }))
+      .sort((x, y) => (x.elixir ?? 99) - (y.elixir ?? 99) || x.name.localeCompare(y.name));
+    const towers = Object.entries(state.cards).filter(([, v]) => v.support).map(([id, v]) => ({ id: +id, ...v }));
+    const others = usage(set, slot); // 他デッキで使用中のカード
+    const exFilters = [["all", "すべて"], ["1-2", "1〜2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6+", "6以上"]];
+
+    openSheet(`<div class="sheet-head"><button class="btn small" id="b-cancel">キャンセル</button><h2>デッキ${slot + 1}を作る</h2><button class="btn small primary" id="b-save">保存</button></div>
+      <div class="sheet-body">
+        <div id="b-tray"></div>
+        <div id="b-info"></div>
+        <div class="row"><label for="b-tt">タワー</label><select id="b-tt">${towers.map(t => `<option value="${t.id}"${t.id === b.tt ? " selected" : ""}>${esc(t.name)}</option>`).join("")}</select></div>
+        <div class="controls" style="margin-bottom:0"><input type="search" id="b-q" placeholder="カード名で検索"></div>
+        <div class="chips">${exFilters.map(([v, l]) => `<button class="chip" data-ex="${v}" aria-pressed="${v === "all"}">${l}</button>`).join("")}</div>
+        <p class="note">タップで追加／外す。赤い「Dn」はセット内のデッキnで使用中（被り）。枠の下のボタンで 通常→進化→ヒーロー を切り替え（使えるカードのみ）。進化・ヒーローのカードは先頭の枠に置かれます。</p>
+        <div class="grid" id="b-grid"></div>
+      </div>`);
+
+    const ordered = () => [...b.cards.filter(c => c.evo), ...b.cards.filter(c => !c.evo)];
+    function drawTray(){
+      const cards = ordered();
+      document.getElementById("b-tray").innerHTML = '<div class="tray">' + Array.from({ length: 8 }, (_, i) => {
+        const c = cards[i];
+        if (!c) return `<div class="tray-slot"><div class="empty-slot"></div></div>`;
+        const i2 = cinfo(c.id), dup = others.has(c.id);
+        const canEvo = !!i2.evoIcon, canHero = !!i2.heroIcon;
+        const label = c.evo === 2 ? "ヒーロー" : c.evo === 1 ? "進化" : "通常";
+        return `<div class="tray-slot"><button class="card${modeCls(c.evo)}${dup ? " dup" : ""}" data-remove="${c.id}" aria-label="${esc(i2.name)}を外す"><img alt="" src="${esc(iconOf(c))}">${dup ? `<span class="badge">D${others.get(c.id).map(x => x + 1).join(",")}</span>` : ""}<div class="nm">${esc(i2.name)}</div></button>
+          ${canEvo || canHero ? `<button class="mode${modeCls(c.evo)}" data-mode="${c.id}">${label}</button>` : ""}</div>`;
+      }).join("") + "</div>";
+      const dupCards = b.cards.filter(c => others.has(c.id));
+      document.getElementById("b-info").innerHTML =
+        `<div class="meta"><b>${b.cards.length}/8</b><span class="muted">平均エリクサー ${b.cards.length ? avgElixir(b.cards) : "-"}</span></div>` +
+        (dupCards.length ? `<div class="warn">⚠ ほかのデッキと${dupCards.length}枚被り：${dupCards.map(c => `${esc(cname(c.id))}（${slotNames(others.get(c.id))}）`).join("、")}</div>` : "");
+      document.getElementById("b-save").disabled = b.cards.length !== 8;
+      document.querySelectorAll("#b-tray [data-remove]").forEach(el => el.onclick = () => { b.cards = b.cards.filter(c => c.id !== +el.dataset.remove); drawTray(); drawGrid(); });
+      document.querySelectorAll("#b-tray [data-mode]").forEach(el => el.onclick = () => {
+        const c = b.cards.find(x => x.id === +el.dataset.mode), i2 = cinfo(c.id);
+        const modes = [0, ...(i2.evoIcon ? [1] : []), ...(i2.heroIcon ? [2] : [])];
+        c.evo = modes[(modes.indexOf(c.evo) + 1) % modes.length];
+        drawTray();
+      });
+    }
+    function exOk(e){ if (b.ex === "all") return true; if (b.ex === "1-2") return e <= 2; if (b.ex === "6+") return e >= 6; return e === +b.ex; }
+    function drawGrid(){
+      const sel = new Set(b.cards.map(c => c.id));
+      const g = document.getElementById("b-grid");
+      g.innerHTML = all.filter(c => exOk(c.elixir) && (!b.q || c.name.toLowerCase().includes(b.q.toLowerCase()))).map(c => {
+        const used = others.get(c.id);
+        return `<button class="card${sel.has(c.id) ? " sel" : ""}${used ? " used" : ""}" data-add="${c.id}" aria-label="${esc(c.name)}"><img loading="lazy" alt="" src="${esc(c.icon || "")}">${used ? `<span class="badge">D${used.map(x => x + 1).join(",")}</span>` : ""}<span class="ex">${c.elixir ?? "?"}</span><div class="nm">${esc(c.name)}</div></button>`;
+      }).join("") || `<div class="empty">該当するカードがありません。</div>`;
+      g.querySelectorAll("[data-add]").forEach(el => el.onclick = () => {
+        const id = +el.dataset.add;
+        if (sel.has(id)) b.cards = b.cards.filter(c => c.id !== id);
+        else if (b.cards.length >= 8) { toast("8枚まで選べます。外してから追加してください"); return; }
+        else { b.cards.push({ id, evo: 0 }); if (others.has(id)) toast(`⚠ ${cname(id)} は${slotNames(others.get(id))}で使用中です`, 2500); }
+        drawTray(); drawGrid();
+      });
+    }
+    document.getElementById("b-cancel").onclick = closeSheet;
+    document.getElementById("b-save").onclick = () => { if (b.cards.length !== 8) return; putDeck(set, slot, { deck: ordered(), tt: b.tt }); closeSheet(); };
+    document.getElementById("b-tt").onchange = ev => { b.tt = +ev.target.value; };
+    document.getElementById("b-q").addEventListener("input", ev => { b.q = ev.target.value.trim(); drawGrid(); });
+    document.querySelectorAll("[data-ex]").forEach(el => el.onclick = () => { b.ex = el.dataset.ex; document.querySelectorAll("[data-ex]").forEach(x => x.setAttribute("aria-pressed", String(x === el))); drawGrid(); });
+    drawTray(); drawGrid();
+  }
+
+  // ---------- top-level ----------
   function render(){
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === state.view)));
     if (state.view === "stock") renderStock(); else renderList(state.view);
   }
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { state.view = t.dataset.view; render(); window.scrollTo(0, 0); }));
 
-  // ---------- load ----------
   const bust = "?t=" + Date.now();
   Promise.all([fetch("data/battles.json" + bust).then(r => r.json()), fetch("data/cards.json" + bust).then(r => r.json())])
     .then(([b, c]) => {

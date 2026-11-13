@@ -49,19 +49,27 @@ def result(a, b):
     return "W" if a > b else ("L" if a < b else "D")
 
 
+def remember_card(c, card_map, support=False):
+    """カード情報を card_map に登録（既存の値は新しい値で上書き、無い値は保持）。"""
+    cid = str(c["id"])
+    icons = c.get("iconUrls", {})
+    old = card_map.get(cid, {})
+    card_map[cid] = {
+        "name": c.get("name") or old.get("name"),
+        "elixir": c.get("elixirCost", old.get("elixir")),
+        "rarity": c.get("rarity") or old.get("rarity"),
+        "icon": icons.get("medium") or old.get("icon"),
+        "evoIcon": icons.get("evolutionMedium") or old.get("evoIcon"),
+        "heroIcon": icons.get("heroMedium") or old.get("heroIcon"),
+        "support": support or old.get("support", False),
+    }
+
+
 def slim_cards(cards, card_map):
     out = []
     for c in cards:
-        cid = c["id"]
-        icons = c.get("iconUrls", {})
-        card_map[str(cid)] = {
-            "name": c.get("name"),
-            "elixir": c.get("elixirCost"),
-            "rarity": c.get("rarity"),
-            "icon": icons.get("medium"),
-            "evoIcon": icons.get("evolutionMedium") or card_map.get(str(cid), {}).get("evoIcon"),
-        }
-        out.append({"id": cid, "evo": c.get("evolutionLevel", 0)})
+        remember_card(c, card_map)
+        out.append({"id": c["id"], "evo": c.get("evolutionLevel", 0)})
     return out
 
 
@@ -101,6 +109,13 @@ def main():
     battles = load(BATTLES, {"player": {}, "battles": []})
     card_map = load(CARDS, {})
     known = {b["id"] for b in battles["battles"]}
+
+    # 全カード一覧（デッキを手で組むため）
+    allc = api("/cards")
+    for c in allc.get("items", []):
+        remember_card(c, card_map)
+    for c in allc.get("supportItems", []):
+        remember_card(c, card_map, support=True)
 
     log = api("/players/" + urllib.parse.quote(TAG) + "/battlelog")
     added = 0
