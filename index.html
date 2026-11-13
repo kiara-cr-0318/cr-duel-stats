@@ -1,0 +1,287 @@
+<!--
+---
+title: Duelデッキ勝率ボード
+client: internal（個人プロジェクト）
+type: plan
+status: draft
+confidentiality: public
+created: 2026-11-13
+updated: 2026-11-13
+tags: [clash-royale, duel, crown-series, deck-stats]
+---
+-->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16181d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Duelデッキ勝率ボード</title>
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --surface2:#eef0f3; --text:#16181d; --muted:#626a76;
+  --line:#dde1e6; --accent:#3a5bd9; --accent-text:#ffffff; --win:#1f8a4c; --lose:#c23b3b; --evo:#8a4fd8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111317; --surface:#1a1d23; --surface2:#23272f; --text:#eceef2; --muted:#9aa2ae;
+    --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a; --evo:#b98bff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#1a1d23; --surface2:#23272f; --text:#eceef2; --muted:#9aa2ae;
+  --line:#2e333c; --accent:#7d97ff; --accent-text:#0d1020; --win:#4cc47e; --lose:#ff7a7a; --evo:#b98bff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 16px 8px;border-bottom:1px solid var(--line)}
+h1{font-size:17px;margin:0}
+.sub{color:var(--muted);font-size:12px}
+main{max-width:720px;margin:0 auto;padding:12px 16px 80px}
+.tabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 14px;font-size:14px}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.controls{display:flex;gap:8px;margin:12px 0}
+.controls input,.controls select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 10px;font-size:15px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12px}
+.deck{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+.cards{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+@media (max-width:420px){.cards{grid-template-columns:repeat(4,1fr)}}
+.card{position:relative;aspect-ratio:5/6;background:var(--surface2);border-radius:6px;overflow:hidden}
+.card img{width:100%;height:100%;object-fit:contain;display:block}
+.card.evo{outline:2px solid var(--evo);outline-offset:-2px}
+.card .nm{position:absolute;inset:auto 0 0 0;font-size:9px;text-align:center;background:rgba(0,0,0,.5);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap}
+.wr{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.wr.good{color:var(--win)} .wr.bad{color:var(--lose)}
+.muted{color:var(--muted);font-size:12px}
+.picks{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.pick{background:var(--surface2);border-radius:8px;padding:3px 8px;font-size:12px;font-variant-numeric:tabular-nums}
+.pick b{font-weight:700}
+.actions{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;text-align:center;text-decoration:none;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:10px;padding:9px 6px;font-size:14px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.btn.small{flex:0 0 auto;padding:6px 10px;font-size:13px}
+.empty{color:var(--muted);text-align:center;padding:32px 8px}
+.set{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:12px}
+.set.active{border-color:var(--accent)}
+.set-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.set-head input{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:8px;padding:6px 8px;font-size:15px;font-weight:600}
+.slot{border-top:1px dashed var(--line);padding-top:8px;margin-top:8px}
+.slot-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.slot-head .n{font-weight:700;font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.note{color:var(--muted);font-size:12px;margin:4px 0 12px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Duelデッキ勝率ボード</h1>
+  <div class="sub" id="updated">読み込み中…</div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="duel" aria-selected="true">Duel</button>
+    <button class="tab" role="tab" data-view="ranked" aria-selected="false">ランクマ</button>
+    <button class="tab" role="tab" data-view="stock" aria-selected="false">ストック</button>
+  </div>
+</header>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const state = { view: "duel", q: "", sort: "wr", battles: [], cards: {}, player: {} };
+  const $main = document.getElementById("main");
+
+  // ---------- storage (per-device) ----------
+  const STORE_KEY = "cr-duel-stocks-v1";
+  function loadStocks(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { active: null, sets: [] }; } catch { return { active: null, sets: [] }; } }
+  function saveStocks(s){ try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} }
+  let stocks = loadStocks();
+
+  // ---------- helpers ----------
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const keyOf = deck => deck.map(c => c.id).slice().sort().join("-");
+  const pct = (w, g) => g ? Math.round(w / g * 100) : null;
+  function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1600); }
+  function fmtTime(s){ // 20261113T034216.000Z
+    if (!s) return "-";
+    const d = new Date(s.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*$/, "$1-$2-$3T$4:$5:$6Z"));
+    return d.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+  function deckLink(deck, tt){
+    let u = "https://link.clashroyale.com/ja/?clashroyale://copyDeck?deck=" + deck.map(c => c.id).join(";") + "&l=Royals";
+    if (tt) u += "&tt=" + tt;
+    return u;
+  }
+  const isDuel = b => b.deckSelection === "quadDeckPick" || (b.rounds && b.rounds.length);
+
+  // ---------- aggregation ----------
+  function aggregate(view){
+    const map = new Map();
+    const add = (deck, tt, res, time, pick) => {
+      const k = keyOf(deck);
+      let e = map.get(k);
+      if (!e) { e = { key: k, deck, tt, g: 0, w: 0, last: time, picks: {} }; map.set(k, e); }
+      e.g++; if (res === "W") e.w++;
+      if (time > e.last) { e.last = time; e.deck = deck; e.tt = tt; }
+      if (pick) { const p = e.picks[pick] ||= { g: 0, w: 0 }; p.g++; if (res === "W") p.w++; }
+    };
+    for (const b of state.battles) {
+      if (view === "duel") {
+        if (!isDuel(b)) continue;
+        for (const r of (b.rounds || [])) add(r.deck, b.tt, r.result, b.time, r.pick);
+      } else if (view === "ranked") {
+        if (isDuel(b)) continue;
+        add(b.deck, b.tt, b.result, b.time, null);
+      }
+    }
+    return [...map.values()];
+  }
+
+  // ---------- rendering ----------
+  function cardsHtml(deck){
+    return '<div class="cards">' + deck.map(c => {
+      const info = state.cards[c.id] || {};
+      const evo = c.evo > 0;
+      const src = (evo && info.evoIcon) || info.icon || "";
+      return `<div class="card${evo ? " evo" : ""}" title="${esc(info.name)}">${src ? `<img loading="lazy" alt="${esc(info.name)}" src="${esc(src)}">` : ""}<div class="nm">${esc(info.name || c.id)}</div></div>`;
+    }).join("") + "</div>";
+  }
+  function avgElixir(deck){
+    const xs = deck.map(c => (state.cards[c.id] || {}).elixir).filter(x => typeof x === "number");
+    return xs.length ? (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : "-";
+  }
+  function matches(deck){
+    if (!state.q) return true;
+    const q = state.q.toLowerCase();
+    return deck.some(c => ((state.cards[c.id] || {}).name || "").toLowerCase().includes(q));
+  }
+
+  function renderList(view){
+    const list = aggregate(view).filter(e => matches(e.deck));
+    list.sort((a, b) => state.sort === "games" ? b.g - a.g || b.w / b.g - a.w / a.g
+                     : state.sort === "recent" ? (b.last > a.last ? 1 : -1)
+                     : (b.w / b.g - a.w / a.g) || b.g - a.g);
+
+    let summary = "";
+    if (view === "duel") {
+      const ms = state.battles.filter(isDuel);
+      const mw = ms.filter(b => b.result === "W").length;
+      const rs = ms.flatMap(b => b.rounds || []);
+      const rw = rs.filter(r => r.result === "W").length;
+      summary = `<div class="summary">
+        <div class="stat"><b>${ms.length ? pct(mw, ms.length) + "%" : "-"}</b><span>試合勝率 ${mw}-${ms.length - mw}</span></div>
+        <div class="stat"><b>${rs.length ? pct(rw, rs.length) + "%" : "-"}</b><span>ラウンド勝率 ${rw}-${rs.length - rw}</span></div>
+        <div class="stat"><b>${list.length}</b><span>使ったデッキ数</span></div></div>`;
+    } else {
+      const bs = state.battles.filter(b => !isDuel(b));
+      const w = bs.filter(b => b.result === "W").length;
+      summary = `<div class="summary">
+        <div class="stat"><b>${bs.length ? pct(w, bs.length) + "%" : "-"}</b><span>勝率 ${w}-${bs.length - w}</span></div>
+        <div class="stat"><b>${bs.length}</b><span>試合数</span></div>
+        <div class="stat"><b>${list.length}</b><span>デッキ数</span></div></div>`;
+    }
+
+    const controls = `<div class="controls">
+      <input type="search" id="q" placeholder="カード名で検索（例: Monk）" value="${esc(state.q)}">
+      <select id="sort">
+        <option value="wr"${state.sort === "wr" ? " selected" : ""}>勝率順</option>
+        <option value="games"${state.sort === "games" ? " selected" : ""}>使用数順</option>
+        <option value="recent"${state.sort === "recent" ? " selected" : ""}>最近使った順</option>
+      </select></div>`;
+
+    const note = view === "duel" ? `<p class="note">Duelは1ラウンド＝1試合として集計。「pick」は何戦目にそのデッキを出したか。</p>` : "";
+
+    const items = list.map(e => {
+      const r = pct(e.w, e.g);
+      const cls = r >= 55 ? "good" : r <= 45 ? "bad" : "";
+      const picks = view === "duel" ? `<div class="picks">${[1, 2, 3].map(p => {
+        const s = e.picks[p]; return `<span class="pick">pick${p}: ${s ? `<b>${pct(s.w, s.g)}%</b> (${s.w}-${s.g - s.w})` : "-"}</span>`;
+      }).join("")}</div>` : "";
+      return `<div class="deck">
+        ${cardsHtml(e.deck)}
+        <div class="meta"><span class="wr ${cls}">${r}%</span><span>${e.w}勝${e.g - e.w}敗</span><span class="muted">平均${avgElixir(e.deck)} ・ 最終 ${fmtTime(e.last)}</span></div>
+        ${picks}
+        <div class="actions">
+          <a class="btn primary" href="${esc(deckLink(e.deck, e.tt))}">アプリでコピー</a>
+          <button class="btn" data-stock="${esc(e.key)}" data-view="${view}">ストックへ追加</button>
+        </div></div>`;
+    }).join("");
+
+    $main.innerHTML = summary + controls + note + (items || `<div class="empty">${view === "duel" ? "まだDuelの記録がありません。Duelを遊ぶと30分以内に反映されます。" : "該当するデッキがありません。"}</div>`);
+    const q = document.getElementById("q");
+    q.addEventListener("input", () => { state.q = q.value.trim(); const pos = q.selectionStart; renderList(view); const nq = document.getElementById("q"); nq.focus(); nq.setSelectionRange(pos, pos); });
+    document.getElementById("sort").addEventListener("change", ev => { state.sort = ev.target.value; renderList(view); });
+    $main.querySelectorAll("[data-stock]").forEach(btn => btn.addEventListener("click", () => {
+      const e = aggregate(btn.dataset.view).find(x => x.key === btn.dataset.stock);
+      if (e) addToStock(e);
+    }));
+  }
+
+  // ---------- stock (4-deck sets) ----------
+  function newSet(){
+    const s = { id: Date.now().toString(36), name: "Duelデッキ " + (stocks.sets.length + 1), decks: [] };
+    stocks.sets.unshift(s); stocks.active = s.id; saveStocks(stocks); return s;
+  }
+  function activeSet(){ return stocks.sets.find(s => s.id === stocks.active) || null; }
+  function addToStock(e){
+    let s = activeSet();
+    if (!s || s.decks.length >= 4) s = newSet();
+    if (s.decks.some(d => keyOf(d.deck) === e.key)) { toast("このセットに追加済みです"); return; }
+    s.decks.push({ deck: e.deck, tt: e.tt });
+    saveStocks(stocks);
+    toast(`「${s.name}」に追加（${s.decks.length}/4）`);
+  }
+  function renderStock(){
+    const sets = stocks.sets;
+    let html = `<div class="actions" style="margin:4px 0 12px"><button class="btn primary" id="new-set">＋ 新しい4デッキセット</button></div>
+      <p class="note">ストックはこの端末のブラウザに保存されます。デッキ一覧の「ストックへ追加」で、選択中のセットに入ります（4つで満杯になると次のセットを自動作成）。</p>`;
+    if (!sets.length) html += `<div class="empty">まだセットがありません。</div>`;
+    html += sets.map(s => `<div class="set${s.id === stocks.active ? " active" : ""}" data-set="${s.id}">
+      <div class="set-head">
+        <input value="${esc(s.name)}" data-rename="${s.id}" aria-label="セット名">
+        <button class="btn small" data-activate="${s.id}">${s.id === stocks.active ? "選択中" : "選択"}</button>
+        <button class="btn small" data-del-set="${s.id}">削除</button>
+      </div>
+      ${[0, 1, 2, 3].map(i => {
+        const d = s.decks[i];
+        return `<div class="slot"><div class="slot-head"><span class="n">デッキ${i + 1}</span>${d ? `<a class="btn small primary" href="${esc(deckLink(d.deck, d.tt))}">コピー</a><button class="btn small" data-rm="${s.id}:${i}">外す</button>` : ""}</div>
+          ${d ? cardsHtml(d.deck) : `<div class="muted">空き</div>`}</div>`;
+      }).join("")}
+    </div>`).join("");
+    $main.innerHTML = html;
+    document.getElementById("new-set").onclick = () => { newSet(); renderStock(); };
+    $main.querySelectorAll("[data-rename]").forEach(inp => inp.addEventListener("change", () => { const s = sets.find(x => x.id === inp.dataset.rename); s.name = inp.value.trim() || s.name; saveStocks(stocks); }));
+    $main.querySelectorAll("[data-activate]").forEach(b => b.onclick = () => { stocks.active = b.dataset.activate; saveStocks(stocks); renderStock(); });
+    $main.querySelectorAll("[data-del-set]").forEach(b => b.onclick = () => {
+      if (b.dataset.armed) { stocks.sets = sets.filter(x => x.id !== b.dataset.delSet); if (stocks.active === b.dataset.delSet) stocks.active = stocks.sets[0]?.id || null; saveStocks(stocks); renderStock(); }
+      else { b.dataset.armed = "1"; b.textContent = "本当に削除"; }
+    });
+    $main.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { const [id, i] = b.dataset.rm.split(":"); const s = sets.find(x => x.id === id); s.decks.splice(+i, 1); saveStocks(stocks); renderStock(); });
+  }
+
+  function render(){
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === state.view)));
+    if (state.view === "stock") renderStock(); else renderList(state.view);
+  }
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { state.view = t.dataset.view; render(); window.scrollTo(0, 0); }));
+
+  // ---------- load ----------
+  const bust = "?t=" + Date.now();
+  Promise.all([fetch("data/battles.json" + bust).then(r => r.json()), fetch("data/cards.json" + bust).then(r => r.json())])
+    .then(([b, c]) => {
+      state.battles = b.battles || []; state.cards = c || {}; state.player = b.player || {};
+      document.getElementById("title").textContent = (state.player.name ? state.player.name + " の" : "") + "Duelデッキ勝率";
+      document.getElementById("updated").textContent = `最新の対戦 ${fmtTime(b.updated)} ・ 記録 ${state.battles.length}戦`;
+      render();
+    })
+    .catch(() => { document.getElementById("updated").textContent = "データを読み込めませんでした"; $main.innerHTML = `<div class="empty">data/battles.json がまだありません。</div>`; });
+})();
+</script>
+</body>
+</html>

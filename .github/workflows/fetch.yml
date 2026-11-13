@@ -1,0 +1,41 @@
+# ---
+# title: 対戦履歴の定期取得ワークフロー
+# client: internal（個人プロジェクト）
+# type: script
+# status: draft
+# confidentiality: internal
+# created: 2026-11-13
+# updated: 2026-11-13
+# tags: [github-actions, clash-royale]
+# ---
+name: fetch battlelog
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # 30分ごと（GitHub側の混雑で数分〜遅れることがあります）
+  workflow_dispatch: {}       # 手動実行
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch battlelog
+        env:
+          CR_API_KEY: ${{ secrets.CR_API_KEY }}
+          CR_PLAYER_TAG: ${{ vars.CR_PLAYER_TAG || '#2J8GG89GY' }}
+        run: python3 scripts/fetch.py
+      - name: Commit data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "update battlelog"
+          git push
